@@ -760,21 +760,34 @@ function buildHoldingsExploreCard(code) {
 }
 
 // range: null(全部) | 20 | 60 — 只影響「展開列裡的AUM/淨值大圖」，跟表格裡固定近20日的縮圖是兩回事
-function sliceTrailing(series, range) {
-  return range ? series.slice(Math.max(0, series.length - range)) : series;
+// 2026-08-10修正：原本AUM/發行股數/衝擊金額三條序列各自獨立取「最後N筆」，但發行股數
+// (=AUM∩淨值的交集)常常比AUM本身涵蓋的交易日少（例如SOXL的AUM有401天、發行股數只有
+// 31天），選同樣的「60日」，AUM圖畫出的日期範圍(5/18~8/7)跟發行股數圖(只有31天可用，
+// 6/25~8/7)左端點對不齊，看起來像同一個「60日」卻不是同一段時間。改成：先用AUM序列
+// (目前資料最完整)決定這個range對應到哪一天當下限，其他序列都篩選「這個日期以後」，
+// 不再各自各算各的天數——史料不足的序列會自然畫出比較短的線，但左端點不會跟AUM對不上。
+function rangeCutoffDate(code, range) {
+  if (!range) return null;
+  const aseries = AUM_SERIES[code] || [];
+  if (!aseries.length) return null;
+  return aseries[Math.max(0, aseries.length - range)].date;
+}
+function sliceTrailing(series, cutoffDate) {
+  return cutoffDate ? series.filter(p => p.date >= cutoffDate) : series;
 }
 
 function attachDetailChartHovers(code, range) {
   const s = SNAPSHOT[code];
-  const aseries = sliceTrailing(AUM_SERIES[code] || [], range);
+  const cutoffDate = rangeCutoffDate(code, range);
+  const aseries = sliceTrailing(AUM_SERIES[code] || [], cutoffDate);
   if (aseries.length >= 2) {
     attachChartHover("aumSvg-" + code, "aumTip-" + code, aseries.map(p => p.aum), aseries.map(p => p.date), fmtUSDCompact);
   }
-  const fseries = sliceTrailing(FLOW_SERIES[code] || [], range);
+  const fseries = sliceTrailing(FLOW_SERIES[code] || [], cutoffDate);
   if (fseries.length >= 2) {
     attachChartHover("sharesSvg-" + code, "sharesTip-" + code, fseries.map(p => p.ratio), fseries.map(p => p.date), v => "≈" + fmtInt(v) + " 單位");
   }
-  const iseries = sliceTrailing(IMPACT_SERIES[code] || [], range);
+  const iseries = sliceTrailing(IMPACT_SERIES[code] || [], cutoffDate);
   if (iseries.length >= 2) {
     attachChartHover("impactSvg-" + code, "impactTip-" + code, iseries.map(p => Math.abs(p.impact)), iseries.map(p => p.date), fmtUSDCompact);
   }
@@ -814,8 +827,9 @@ function wireDetailInteractivity(code) {
 // range: null(全部) | 20 | 60。回傳「淨值/市價卡 + AUM卡」那一整排的HTML。
 function renderChartsSection(code, range) {
   const s = SNAPSHOT[code];
-  const aseries = sliceTrailing(AUM_SERIES[code] || [], range);
-  const fseries = sliceTrailing(FLOW_SERIES[code] || [], range);
+  const cutoffDate = rangeCutoffDate(code, range);
+  const aseries = sliceTrailing(AUM_SERIES[code] || [], cutoffDate);
+  const fseries = sliceTrailing(FLOW_SERIES[code] || [], cutoffDate);
   const rangeLabel = range ? `${range}日` : "全部可用歷史";
 
   let navChartHtml, navTitle, navSubtitle;
@@ -844,7 +858,7 @@ function renderChartsSection(code, range) {
     ? `<div class="chart-wrap">${chartSVGString(aseries.map(p => p.aum), "aumGrad-" + code, "aumSvg-" + code)}<div class="chart-tooltip" id="aumTip-${code}"></div></div>`
     : noDataCard("暫無歷史走勢資料");
 
-  const iseries = sliceTrailing(IMPACT_SERIES[code] || [], range);
+  const iseries = sliceTrailing(IMPACT_SERIES[code] || [], cutoffDate);
   let impactChartHtml, impactSubtitle;
   if (iseries.length >= 2) {
     const absVals = iseries.map(p => Math.abs(p.impact));
