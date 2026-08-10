@@ -128,14 +128,13 @@
   /* pin the two chart columns to the right edge of the scroll area — at narrower panel widths the table
      needs horizontal scroll, and without this the sparklines (the whole point of those columns) were the
      first thing to scroll out of view / get visually chopped at the container edge */
-  .sticky-col-1, .sticky-col-2, .sticky-col-3 { position: sticky; width: 132px; min-width: 132px; z-index: 2; }
+  .sticky-col-1, .sticky-col-2 { position: sticky; width: 132px; min-width: 132px; z-index: 2; }
   .sticky-col-1 { right: 0; }
   .sticky-col-2 { right: 132px; border-left: 1px solid var(--border); }
-  .sticky-col-3 { right: 264px; border-left: 1px solid var(--border); }
-  thead th.sticky-col-1, thead th.sticky-col-2, thead th.sticky-col-3 { z-index: 3; background: var(--surface-2); }
-  tbody td.sticky-col-1, tbody td.sticky-col-2, tbody td.sticky-col-3 { background: var(--surface); }
-  tbody tr:hover td.sticky-col-1, tbody tr:hover td.sticky-col-2, tbody tr:hover td.sticky-col-3 { background: var(--surface-2); }
-  tbody tr.selected td.sticky-col-1, tbody tr.selected td.sticky-col-2, tbody tr.selected td.sticky-col-3 { background: var(--accent-soft); }
+  thead th.sticky-col-1, thead th.sticky-col-2 { z-index: 3; background: var(--surface-2); }
+  tbody td.sticky-col-1, tbody td.sticky-col-2 { background: var(--surface); }
+  tbody tr:hover td.sticky-col-1, tbody tr:hover td.sticky-col-2 { background: var(--surface-2); }
+  tbody tr.selected td.sticky-col-1, tbody tr.selected td.sticky-col-2 { background: var(--accent-soft); }
 
   .hint-row { text-align: center; color: var(--text-faint); font-size: 12px; padding: 8px; margin-top: 8px; }
 
@@ -287,8 +286,8 @@ const COLUMNS = [
   { key: "aum", label: "AUM" },
   { key: "nav", label: "淨值" },
   { key: "sharesOutChg1d", label: "發行單位數變化" },
-  { key: "impactAmount", label: "衝擊金額" },
-  { key: "impactSpark", label: "衝擊金額近20日走勢" },
+  { key: "impactRebalance", label: "再平衡金額" },
+  { key: "impactFlow", label: "申贖影響金額" },
   { key: "flowSpark", label: "發行股數近20日走勢" },
   { key: "aumSpark", label: "AUM近20日走勢" },
 ];
@@ -372,10 +371,10 @@ document.getElementById("snapshotLabel").textContent = `最新快照（T-${CUTOF
     <p>網站固定只用「${CUTOFF_LAG_DAYS}個交易日以前」的資料，即使pipeline已經跑出更新的數字也一樣濾掉不用。頁面右上角「最新快照（T-${CUTOFF_LAG_DAYS}）」是這個政策的日期上限；個別欄位若剛好那個資料源還沒更新到這麼近，會比這個日期更早（滑鼠移到各欄位上看實際日期）。</p>
 
     <h4>「發行單位數變化」「發行股數近20日走勢」欄位是怎麼來的</h4>
-    <p>發行股數沒有逐日官方序列可查，用AUM／淨值(NAV)當天的比值(AUM＝淨值×發行股數，兩者皆知就能反推)當估算值——因為AUM上漲有兩種可能：淨值(標的股價)自己漲、或是真的有新資金流入(發行股數增加)，這個比值等於把「價格效果」濾掉，只留下比較接近「資金流」的部分。沒有逐日NAV的標的改用市價當分母(兩者通常很接近)。「發行單位數變化」欄放的是這條估算序列較前一交易日的變化量，後面括號是同一筆變化量換算成的百分比；20日的增幅版本改放在「發行股數近20日走勢」縮圖左上角的badge，避免跟這欄重複。展開列的「發行股數」大圖用的也是同一份估算序列，數字前面都標了≈。AUM近20日走勢縮圖左上角的增幅標註則直接對應主表格排序用的「AUM」欄近20日變化，衝擊金額近20日走勢縮圖左上角的增幅標註是近20日衝擊金額(絕對值)的頭尾變化率，統計列「發行股數(估算) 近20日增幅家數」用的也是「發行股數近20日走勢」縮圖同一套20日數字。</p>
+    <p>發行股數沒有逐日官方序列可查，用AUM／淨值(NAV)當天的比值(AUM＝淨值×發行股數，兩者皆知就能反推)當估算值——因為AUM上漲有兩種可能：淨值(標的股價)自己漲、或是真的有新資金流入(發行股數增加)，這個比值等於把「價格效果」濾掉，只留下比較接近「資金流」的部分。沒有逐日NAV的標的改用市價當分母(兩者通常很接近)。「發行單位數變化」欄放的是這條估算序列較前一交易日的變化量，後面括號是同一筆變化量換算成的百分比；20日的增幅版本改放在「發行股數近20日走勢」縮圖左上角的badge，避免跟這欄重複。展開列的「發行股數」大圖用的也是同一份估算序列，數字前面都標了≈。AUM近20日走勢縮圖左上角的增幅標註則直接對應主表格排序用的「AUM」欄近20日變化，統計列「發行股數(估算) 近20日增幅家數」用的也是「發行股數近20日走勢」縮圖同一套20日數字。</p>
 
-    <h4>「衝擊金額」欄位在算什麼</h4>
-    <p>拆成兩塊估算後加總：<b>①再平衡效應</b> — 追蹤指數(或標的)漲跌時，基金為維持固定槓桿倍數必須交易的金額，公式是 <code>AUM×(槓桿-1)×淨值當日報酬率</code>（用淨值當日報酬率反推指數報酬率，槓桿倍數在化簡過程中會自己消掉，不用另外抓指數逐日資料）；<b>②資金流(申購/贖回)效應</b> — 當天發行股數的估算變化量乘上淨值，代表有人申購/贖回實際造成的買賣壓力。兩者是ETF發行商當天要在市場上交易的兩個獨立來源，直接加總。這欄全部都是估算值：不只槓桿倍數關係是理論上的近似，發行股數本身也是估算值，衝擊金額當然一併是估算。</p>
+    <h4>「再平衡金額」「申贖影響金額」欄位在算什麼</h4>
+    <p>這兩欄是原本合稱「衝擊金額」的估算值拆開來的兩塊：<b>再平衡金額</b> — 追蹤指數(或標的)漲跌時，基金為維持固定槓桿倍數必須交易的金額，公式是 <code>AUM×(槓桿-1)×淨值當日報酬率</code>（用淨值當日報酬率反推指數報酬率，槓桿倍數在化簡過程中會自己消掉，不用另外抓指數逐日資料）；<b>申贖影響金額</b> — 當天發行股數的估算變化量(見「發行單位數變化」欄)乘上淨值，代表有人申購/贖回實際造成的買賣壓力。兩者是ETF發行商當天要在市場上交易的兩個獨立來源，分開列出方便判斷這天的交易壓力主要是「指數自己漲跌造成的再平衡」還是「真的有資金申購/贖回」。兩欄都是估算值：不只槓桿倍數關係是理論上的近似，發行股數本身也是估算值。</p>
 
     <h4>資料來源</h4>
     <p>${issuers.join("、")} 官方資料源＋Yahoo Finance／TradingView／etfdb.com／iShares官網補齊市價與部分持股，詳細技術細節見專案README。</p>
@@ -436,7 +435,7 @@ function renderHead() {
   thead.innerHTML = "<tr>" + COLUMNS.map(c => {
     const active = c.key === sortKey;
     const arrow = active ? (sortDir === "desc" ? "▼" : "▲") : "▼";
-    const stickyClass = c.key === "aumSpark" ? "sticky-col-1" : c.key === "flowSpark" ? "sticky-col-2" : c.key === "impactSpark" ? "sticky-col-3" : "";
+    const stickyClass = c.key === "aumSpark" ? "sticky-col-1" : c.key === "flowSpark" ? "sticky-col-2" : "";
     return `<th class="${stickyClass}"><button class="th-btn ${active ? "active" : ""}" data-key="${c.key}">${c.label}<span class="arrow">${arrow}</span></button></th>`;
   }).join("") + "</tr>";
   thead.querySelectorAll(".th-btn").forEach(btn => {
@@ -479,14 +478,6 @@ function flowChg1dForCode(code) {
   const cur = series[series.length - 1].ratio;
   return { delta: cur - prev, pct: prev ? (cur / prev - 1) * 100 : null };
 }
-// 主表格縮圖用絕對值(|衝擊金額|)——衝擊金額本身正負震盪，取絕對值畫成走勢圖看的是
-// 「每天實際的交易活躍度/影響力道」，不是方向；展開列裡的大圖(見renderChartsSection)
-// 維持原始正負值，那邊本來就有subtitle標明漲跌色，方向資訊在那裡才看得到。
-function trailingImpactSpark(code, n) {
-  const series = sliceTrailing(IMPACT_SERIES[code] || [], rangeCutoffDate(code, n));
-  return { values: series.map(p => Math.abs(p.impact)), dates: series.map(p => p.date) };
-}
-
 function sparkSVG(values, trendClass, svgId) {
   if (values.length < 2) {
     return `<span class="na" title="史料不足，無法繪製走勢">資料不足</span>`;
@@ -511,10 +502,8 @@ function sparkSVG(values, trendClass, svgId) {
 
 function renderBody() {
   let rows = CODES.map(c => {
-    const is = trailingImpactSpark(c, 20).values; // 已經是絕對值
-    const impactChg20 = (is.length >= 2 && is[0]) ? (is[is.length - 1] / is[0] - 1) * 100 : null; // 近20日增幅(頭尾變化率)，跟AUM/發行股數兩個縮圖同一套算法，也是這欄的排序依據
     const shareChg1d = flowChg1dForCode(c);
-    return { code: c, ...SNAPSHOT[c], aumSpark: SNAPSHOT[c].aumChg20, flowSpark: flowChg20ForCode(c), sharesOutChg1d: shareChg1d.delta, sharesOutChg1dPct: shareChg1d.pct, impactSpark: impactChg20 };
+    return { code: c, ...SNAPSHOT[c], aumSpark: SNAPSHOT[c].aumChg20, flowSpark: flowChg20ForCode(c), sharesOutChg1d: shareChg1d.delta, sharesOutChg1dPct: shareChg1d.pct };
   });
   rows.sort((a, b) => {
     let av = a[sortKey], bv = b[sortKey];
@@ -534,7 +523,6 @@ function renderBody() {
     const chgLabel = (r.priceChg1d === null || r.priceChg1d === undefined) ? "—" : `${chgArrow} ${Math.abs(r.priceChg1d).toFixed(2)}%`;
     const spark = trailingAumSpark(r.code, 20);
     const flowSpark = trailingFlowSpark(r.code, 20);
-    const impactSparkSeries = trailingImpactSpark(r.code, 20);
     const navTip = r.navIsEstimate ? (r.navIsDerived
       ? `淨值是用追蹤標的(${r.navDerivedFrom})股價＋槓桿複利，從真實NAV快照回推的估算值，非官方逐日公布（詳見文末附錄）`
       : `此標的NAV暫無逐日歷史，這是最新快照的估算值（詳見文末附錄）`) : "";
@@ -544,10 +532,14 @@ function renderBody() {
     const sharesOutChgCell = (r.sharesOutChg1d === null || r.sharesOutChg1d === undefined)
       ? `<span class="na" title="史料不足，無法計算">—</span>`
       : `<span class="delta ${deltaClassInt(r.sharesOutChg1d)}">${fmtIntSigned(r.sharesOutChg1d)}${sharesOutChgPctText}</span>`;
-    const impactTip = `衝擊金額（估算） = 再平衡效應 AUM×(槓桿-1)×淨值當日報酬率${r.impactReturnSource === "price" ? "（此標的無逐日NAV，改用市價當日報酬率代替）" : ""} + 資金流效應 Δ發行股數(估算)×淨值。詳見文末附錄`;
-    const impactCell = (r.impactAmount === null || r.impactAmount === undefined)
+    const impactRebalanceTip = `再平衡效應（估算） = AUM×(槓桿-1)×淨值當日報酬率${r.impactReturnSource === "price" ? "（此標的無逐日NAV，改用市價當日報酬率代替）" : ""}——追蹤指數(或標的)漲跌時，基金為維持固定槓桿倍數必須交易的金額。詳見文末附錄`;
+    const impactRebalanceCell = (r.impactRebalance === null || r.impactRebalance === undefined)
       ? `<span class="na" title="無資料">—</span>`
-      : `<span class="delta ${deltaClassUSDCompact(r.impactAmount)}">${fmtUSDCompactSigned(r.impactAmount)}</span>`;
+      : `<span class="delta ${deltaClassUSDCompact(r.impactRebalance)}">${fmtUSDCompactSigned(r.impactRebalance)}</span>`;
+    const impactFlowTip = `申贖影響金額（估算） = Δ發行股數(估算)×淨值——當天有人申購/贖回實際造成的買賣壓力，估算方法見「發行單位數變化」欄。詳見文末附錄`;
+    const impactFlowCell = (r.impactFlow === null || r.impactFlow === undefined)
+      ? `<span class="na" title="無資料">—</span>`
+      : `<span class="delta ${deltaClassUSDCompact(r.impactFlow)}">${fmtUSDCompactSigned(r.impactFlow)}</span>`;
 
     const mainRow = `
       <tr data-code="${r.code}" class="${r.code === selectedCode ? "selected" : ""}">
@@ -571,14 +563,8 @@ function renderBody() {
         <td class="num" title="US$ ${fmtInt(r.aum)}・資料日期 ${r.aumDate || "—"}">${fmtUSDCompact(r.aum)}</td>
         <td class="num" title="${navTip}">${navCell}</td>
         <td class="num" title="${sharesOutChgTip}">${sharesOutChgCell}</td>
-        <td class="num" title="${impactTip}">${impactCell}</td>
-        <td class="num spark-td sticky-col-3" title="近${impactSparkSeries.values.length}個交易日 衝擊金額(估算,絕對值)走勢，${r.impactSpark === null || r.impactSpark === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.impactSpark, 1)}・點擊查看完整歷史">
-          <div class="spark-cell">
-            ${(r.impactSpark === null || r.impactSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClassPct(r.impactSpark, 1)}">${fmtPct(r.impactSpark, 1)}</span>`}
-            ${sparkSVG(impactSparkSeries.values, "zero", "impactSpark-" + r.code)}
-            <div class="chart-tooltip" id="impactSparkTip-${r.code}"></div>
-          </div>
-        </td>
+        <td class="num" title="${impactRebalanceTip}">${impactRebalanceCell}</td>
+        <td class="num" title="${impactFlowTip}">${impactFlowCell}</td>
         <td class="num spark-td sticky-col-2" title="近${flowSpark.values.length}個交易日 發行股數(估算＝AUM/淨值)走勢，${r.flowSpark === null || r.flowSpark === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.flowSpark, 1)}・點擊查看完整歷史">
           <div class="spark-cell">
             ${(r.flowSpark === null || r.flowSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClassPct(r.flowSpark, 1)}">${fmtPct(r.flowSpark, 1)}</span>`}
@@ -609,7 +595,7 @@ function renderBody() {
     btn.addEventListener("click", e => { e.stopPropagation(); selectedCode = null; renderBody(); });
   });
 
-  // 主表格三個縮圖(AUM/發行股數/衝擊金額走勢)故意不接hover顯示標籤——數字本身已經在同一列的
+  // 主表格兩個縮圖(AUM/發行股數走勢)故意不接hover顯示標籤——數字本身已經在同一列的
   // 其他欄位看得到，縮圖只是給個形狀概覽，滑鼠劃過整排時彈出提示框反而干擾閱讀。
   // 展開列裡的大圖(attachDetailChartHovers)不受影響，那邊維持有hover標籤。
 
