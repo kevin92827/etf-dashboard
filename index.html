@@ -449,17 +449,20 @@ function renderHead() {
   });
 }
 
+// 2026-08-10修正：這三個trailingXSpark原本各自獨立取「最後n筆」，跟展開列大圖踩過的是
+// 同一種bug——SKUU/SKHU/SKDD這種序列中間有小缺口的標的，AUM近20筆起點跟發行股數/衝擊金額
+// 近20筆起點會差1~2天，同一列三個縮圖看起來像同一段「近20日」，實際日期卻對不齊。改用
+// rangeCutoffDate(以AUM序列為準決定日期下限)+sliceTrailing(依日期篩選)，跟展開列大圖共用
+// 同一套對齊邏輯，不再各自各算各的天數。
 function trailingAumSpark(code, n) {
-  const series = AUM_SERIES[code] || [];
-  const slice = series.slice(Math.max(0, series.length - n));
-  return { values: slice.map(p => p.aum), dates: slice.map(p => p.date) };
+  const series = sliceTrailing(AUM_SERIES[code] || [], rangeCutoffDate(code, n));
+  return { values: series.map(p => p.aum), dates: series.map(p => p.date) };
 }
 // AUM/淨值比值＝近似「流通單位數」走勢——把AUM的變化拆開來看，剔除掉「淨值(標的價格)本身漲跌」的效果，
 // 只留下比較接近「真的有沒有資金流入流出」的部分
 function trailingFlowSpark(code, n) {
-  const series = FLOW_SERIES[code] || [];
-  const slice = series.slice(Math.max(0, series.length - n));
-  return { values: slice.map(p => p.ratio), dates: slice.map(p => p.date) };
+  const series = sliceTrailing(FLOW_SERIES[code] || [], rangeCutoffDate(code, n));
+  return { values: series.map(p => p.ratio), dates: series.map(p => p.date) };
 }
 // 發行單位數(估算)近20日變化率——給「發行股數近20日走勢」縮圖上的badge，以及下面統計列「發行股數版」
 // 增幅家數共用同一個算法/同一個數字，不要各算各的。
@@ -480,9 +483,8 @@ function flowChg1dForCode(code) {
 // 「每天實際的交易活躍度/影響力道」，不是方向；展開列裡的大圖(見renderChartsSection)
 // 維持原始正負值，那邊本來就有subtitle標明漲跌色，方向資訊在那裡才看得到。
 function trailingImpactSpark(code, n) {
-  const series = IMPACT_SERIES[code] || [];
-  const slice = series.slice(Math.max(0, series.length - n));
-  return { values: slice.map(p => Math.abs(p.impact)), dates: slice.map(p => p.date) };
+  const series = sliceTrailing(IMPACT_SERIES[code] || [], rangeCutoffDate(code, n));
+  return { values: series.map(p => Math.abs(p.impact)), dates: series.map(p => p.date) };
 }
 
 function sparkSVG(values, trendClass, svgId) {
