@@ -116,7 +116,6 @@
   .ex-tag, .issuer-tag { background: var(--surface-2); }
 
   .delta { font-weight: 600; } .delta.pos { color: var(--pos); } .delta.neg { color: var(--neg); } .delta.zero { color: var(--text-dim); }
-  .est-mark { color: var(--est); font-weight: 700; cursor: help; }
   .na { color: var(--text-faint); cursor: help; }
 
   .spark-cell { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 3px; position: relative; }
@@ -255,7 +254,7 @@
       </table>
     </div>
   </div>
-  <p class="hint-row">點欄位標題排序（再點一次切換升冪／降冪）・點任一列或縮圖，在該列下方展開歷史走勢與持股拆解・標<span class="est-mark">＊</span>的數字滑鼠移上去看說明</p>
+  <p class="hint-row">點欄位標題排序（再點一次切換升冪／降冪）・點任一列或縮圖，在該列下方展開歷史走勢與持股拆解・數字滑鼠移上去可看估算方法說明</p>
 
   <footer>
     <details class="appendix">
@@ -309,6 +308,10 @@ function fmtUSDCompactSigned(v) {
   return (v >= 0 ? "+" : "−") + fmtUSDCompact(Math.abs(v));
 }
 function fmtInt(v) { return (v === null || v === undefined) ? "—" : Math.round(v).toLocaleString("en-US"); }
+function fmtIntSigned(v) {
+  if (v === null || v === undefined) return "—";
+  return (v >= 0 ? "+" : "−") + fmtInt(Math.abs(v));
+}
 function fmtPct(v, d) {
   if (v === null || v === undefined) return "—";
   const sign = v > 0 ? "+" : "";
@@ -343,18 +346,18 @@ document.getElementById("snapshotLabel").textContent = `最新快照（T-${CUTOF
     <p>網站固定只用「${CUTOFF_LAG_DAYS}個交易日以前」的資料，即使pipeline已經跑出更新的數字也一樣濾掉不用。頁面右上角「最新快照（T-${CUTOFF_LAG_DAYS}）」是這個政策的日期上限；個別欄位若剛好那個資料源還沒更新到這麼近，會比這個日期更早（滑鼠移到各欄位上看實際日期）。</p>
 
     <h4>「發行單位數變化」「發行股數走勢」欄位是怎麼來的</h4>
-    <p>發行股數沒有逐日官方序列可查，用AUM／淨值(NAV)當天的比值(AUM＝淨值×發行股數，兩者皆知就能反推)當估算值——因為AUM上漲有兩種可能：淨值(標的股價)自己漲、或是真的有新資金流入(發行股數增加)，這個比值等於把「價格效果」濾掉，只留下比較接近「資金流」的部分。沒有逐日NAV的標的改用市價當分母(兩者通常很接近)。「發行單位數變化」欄放的是這條估算序列較前一交易日的變化率；20日版本改放在「發行股數走勢」縮圖左上角的badge，避免跟這欄重複。展開列的「發行股數」大圖用的也是同一份估算序列，數字前面都標了≈。AUM近20日走勢縮圖左上角的增幅標註則直接對應主表格排序用的「AUM」欄近20日變化，統計列「發行股數(估算) 近20日增幅家數」用的也是「發行股數走勢」縮圖同一套20日數字。</p>
+    <p>發行股數沒有逐日官方序列可查，用AUM／淨值(NAV)當天的比值(AUM＝淨值×發行股數，兩者皆知就能反推)當估算值——因為AUM上漲有兩種可能：淨值(標的股價)自己漲、或是真的有新資金流入(發行股數增加)，這個比值等於把「價格效果」濾掉，只留下比較接近「資金流」的部分。沒有逐日NAV的標的改用市價當分母(兩者通常很接近)。「發行單位數變化」欄放的是這條估算序列較前一交易日的變化量(絕對數字，不是百分比)；20日的增幅百分比版本改放在「發行股數走勢」縮圖左上角的badge，避免跟這欄重複。展開列的「發行股數」大圖用的也是同一份估算序列，數字前面都標了≈。AUM近20日走勢縮圖左上角的增幅標註則直接對應主表格排序用的「AUM」欄近20日變化，衝擊金額走勢縮圖左上角的增幅標註是近20日衝擊金額(絕對值)的頭尾變化率，統計列「發行股數(估算) 近20日增幅家數」用的也是「發行股數走勢」縮圖同一套20日數字。</p>
 
     <h4>「衝擊金額」欄位在算什麼</h4>
-    <p>拆成兩塊估算後加總：<b>①再平衡效應</b> — 追蹤指數(或標的)漲跌時，基金為維持固定槓桿倍數必須交易的金額，公式是 <code>AUM×(槓桿-1)×淨值當日報酬率</code>（用淨值當日報酬率反推指數報酬率，槓桿倍數在化簡過程中會自己消掉，不用另外抓指數逐日資料）；<b>②資金流(申購/贖回)效應</b> — 當天發行股數的估算變化量乘上淨值，代表有人申購/贖回實際造成的買賣壓力。兩者是ETF發行商當天要在市場上交易的兩個獨立來源，直接加總。全部欄位都標＊：不只槓桿倍數關係是理論上的近似，發行股數本身也是估算值，衝擊金額當然一併是估算。</p>
+    <p>拆成兩塊估算後加總：<b>①再平衡效應</b> — 追蹤指數(或標的)漲跌時，基金為維持固定槓桿倍數必須交易的金額，公式是 <code>AUM×(槓桿-1)×淨值當日報酬率</code>（用淨值當日報酬率反推指數報酬率，槓桿倍數在化簡過程中會自己消掉，不用另外抓指數逐日資料）；<b>②資金流(申購/贖回)效應</b> — 當天發行股數的估算變化量乘上淨值，代表有人申購/贖回實際造成的買賣壓力。兩者是ETF發行商當天要在市場上交易的兩個獨立來源，直接加總。這欄全部都是估算值：不只槓桿倍數關係是理論上的近似，發行股數本身也是估算值，衝擊金額當然一併是估算。</p>
 
     <h4>資料來源</h4>
     <p>${issuers.join("、")} 官方資料源＋Yahoo Finance／TradingView／etfdb.com／iShares官網補齊市價與部分持股，詳細技術細節見專案README。</p>
 
-    <h4>「近20日」欄位標＊的標的</h4>
+    <h4>「近20日」欄位史料不足20日的標的</h4>
     <p>${shortAum.length ? shortAum.join("、") + " 目前史料不足20個交易日，已改算到最早可用日期（不是無法計算）。" : "目前所有標的史料都滿20個交易日。"}</p>
 
-    <h4>淨值(NAV)標＊的標的</h4>
+    <h4>淨值(NAV)為估算值的標的</h4>
     <p>
       ${derived.length ? `<b>${derived.join("、")}</b>：發行商沒有提供逐日NAV，改用「追蹤標的股價＋槓桿倍數逐日複利」從唯一已知的真實NAV快照回推估算（槓桿ETF追的是每日報酬率×槓桿倍數，不是價格水準，所以只能靠逐日報酬率複利往回推，不能只看今天股價）。` : ""}
       ${snapOnly.length ? `<b>${snapOnly.join("、")}</b>：追蹤標的目前連股價來源都還沒有，只能停在單一快照估算值，沒有歷史走勢，衝擊金額改用市價當日報酬率代替淨值報酬率估算。` : ""}
@@ -388,7 +391,6 @@ function renderStats() {
     <div class="stat-card">
       <div class="stat-label">合計 AUM</div>
       <div class="stat-value mono">${fmtUSDCompact(totalAUM)}</div>
-      <div class="stat-sub">12 檔加總（各標的資料日期略有差異）</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">發行股數(估算) 近20日增幅家數（漲/跌）</div>
@@ -439,15 +441,14 @@ function flowChg20ForCode(code) {
   const fs = trailingFlowSpark(code, 20).values;
   return fs.length >= 2 ? (fs[fs.length - 1] / fs[0] - 1) * 100 : null;
 }
-// 發行單位數(估算)較前一交易日變化率——主表格「發行單位數變化」欄用，20日版本已經在
-// 「發行股數走勢」縮圖的badge上看得到了，這欄只放1日版本，不重複。
-function flowChg1dForCode(code) {
+// 發行單位數(估算)較前一交易日變化量(絕對數字，非百分比)——主表格「發行單位數變化」欄用，
+// 20日的百分比版本已經在「發行股數走勢」縮圖的badge上看得到了，這欄只放1日版本，不重複。
+function flowDelta1dForCode(code) {
   const series = FLOW_SERIES[code] || [];
   if (series.length < 2) return null;
   const prev = series[series.length - 2].ratio;
   const cur = series[series.length - 1].ratio;
-  if (!prev) return null;
-  return (cur / prev - 1) * 100;
+  return cur - prev;
 }
 // 主表格縮圖用絕對值(|衝擊金額|)——衝擊金額本身正負震盪，取絕對值畫成走勢圖看的是
 // 「每天實際的交易活躍度/影響力道」，不是方向；展開列裡的大圖(見renderChartsSection)
@@ -483,8 +484,8 @@ function sparkSVG(values, trendClass, svgId) {
 function renderBody() {
   let rows = CODES.map(c => {
     const is = trailingImpactSpark(c, 20).values; // 已經是絕對值
-    const impactSpark20 = is.length ? is.reduce((a, b) => a + b, 0) : null; // 近20日衝擊金額絕對值累計(總活躍度)，當這欄的排序依據
-    return { code: c, ...SNAPSHOT[c], aumSpark: SNAPSHOT[c].aumChg20, flowSpark: flowChg20ForCode(c), sharesOutChg1d: flowChg1dForCode(c), impactSpark: impactSpark20 };
+    const impactChg20 = (is.length >= 2 && is[0]) ? (is[is.length - 1] / is[0] - 1) * 100 : null; // 近20日增幅(頭尾變化率)，跟AUM/發行股數兩個縮圖同一套算法，也是這欄的排序依據
+    return { code: c, ...SNAPSHOT[c], aumSpark: SNAPSHOT[c].aumChg20, flowSpark: flowChg20ForCode(c), sharesOutChg1d: flowDelta1dForCode(c), impactSpark: impactChg20 };
   });
   rows.sort((a, b) => {
     let av = a[sortKey], bv = b[sortKey];
@@ -505,19 +506,18 @@ function renderBody() {
     const spark = trailingAumSpark(r.code, 20);
     const flowSpark = trailingFlowSpark(r.code, 20);
     const impactSparkSeries = trailingImpactSpark(r.code, 20);
-    const navTip = r.navIsDerived
+    const navTip = r.navIsEstimate ? (r.navIsDerived
       ? `淨值是用追蹤標的(${r.navDerivedFrom})股價＋槓桿複利，從真實NAV快照回推的估算值，非官方逐日公布（詳見文末附錄）`
-      : `此標的NAV暫無逐日歷史，這是最新快照的估算值（詳見文末附錄）`;
-    const navCell = r.nav === null ? `<span class="na" title="無資料">—</span>` :
-      `${fmtUSD2(r.nav)}${r.navIsEstimate ? `<span class="est-mark" title="${navTip}">＊</span>` : ""}`;
-    const sharesOutChgTip = `發行單位數變化（估算）＝較前一交易日 AUM/淨值(或市價)比值 變化率，20日版本在「發行股數走勢」縮圖上${r.sharesOutDate ? "・資料日期 " + r.sharesOutDate : ""}，詳見文末附錄`;
+      : `此標的NAV暫無逐日歷史，這是最新快照的估算值（詳見文末附錄）`) : "";
+    const navCell = r.nav === null ? `<span class="na" title="無資料">—</span>` : fmtUSD2(r.nav);
+    const sharesOutChgTip = `發行單位數變化（估算）＝較前一交易日 AUM/淨值(或市價)比值 變化量，20日增幅在「發行股數走勢」縮圖上${r.sharesOutDate ? "・資料日期 " + r.sharesOutDate : ""}，詳見文末附錄`;
     const sharesOutChgCell = (r.sharesOutChg1d === null || r.sharesOutChg1d === undefined)
       ? `<span class="na" title="史料不足，無法計算">—</span>`
-      : `<span class="delta ${deltaClass(r.sharesOutChg1d)}">${fmtPct(r.sharesOutChg1d)}</span><span class="est-mark" title="${sharesOutChgTip}">＊</span>`;
+      : `<span class="delta ${deltaClass(r.sharesOutChg1d)}">${fmtIntSigned(r.sharesOutChg1d)}</span>`;
     const impactTip = `衝擊金額（估算） = 再平衡效應 AUM×(槓桿-1)×淨值當日報酬率${r.impactReturnSource === "price" ? "（此標的無逐日NAV，改用市價當日報酬率代替）" : ""} + 資金流效應 Δ發行股數(估算)×淨值。詳見文末附錄`;
     const impactCell = (r.impactAmount === null || r.impactAmount === undefined)
       ? `<span class="na" title="無資料">—</span>`
-      : `<span class="delta ${deltaClass(r.impactAmount)}">${fmtUSDCompactSigned(r.impactAmount)}</span><span class="est-mark" title="${impactTip}">＊</span>`;
+      : `<span class="delta ${deltaClass(r.impactAmount)}">${fmtUSDCompactSigned(r.impactAmount)}</span>`;
 
     const mainRow = `
       <tr data-code="${r.code}" class="${r.code === selectedCode ? "selected" : ""}">
@@ -539,12 +539,12 @@ function renderBody() {
           </div>
         </td>
         <td class="num" title="US$ ${fmtInt(r.aum)}・資料日期 ${r.aumDate || "—"}">${fmtUSDCompact(r.aum)}</td>
-        <td class="num">${navCell}</td>
+        <td class="num" title="${navTip}">${navCell}</td>
         <td class="num" title="${sharesOutChgTip}">${sharesOutChgCell}</td>
-        <td class="num">${impactCell}</td>
-        <td class="num spark-td sticky-col-3" title="近${impactSparkSeries.values.length}個交易日 衝擊金額(估算,絕對值)走勢，${r.impactSpark === null || r.impactSpark === undefined ? "合計史料不足" : "近20日合計 " + fmtUSDCompact(r.impactSpark)}・點擊查看完整歷史">
+        <td class="num" title="${impactTip}">${impactCell}</td>
+        <td class="num spark-td sticky-col-3" title="近${impactSparkSeries.values.length}個交易日 衝擊金額(估算,絕對值)走勢，${r.impactSpark === null || r.impactSpark === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.impactSpark, 1)}・點擊查看完整歷史">
           <div class="spark-cell">
-            ${(r.impactSpark === null || r.impactSpark === undefined) ? "" : `<span class="spark-chg-badge neutral">${fmtUSDCompact(r.impactSpark)}</span>`}
+            ${(r.impactSpark === null || r.impactSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClass(r.impactSpark)}">${fmtPct(r.impactSpark, 1)}</span>`}
             ${sparkSVG(impactSparkSeries.values, "zero", "impactSpark-" + r.code)}
             <div class="chart-tooltip" id="impactSparkTip-${r.code}"></div>
           </div>
