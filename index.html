@@ -327,6 +327,23 @@ function fmtPct(v, d) {
   return (isZero ? "" : (v > 0 ? "+" : "-")) + mag + "%";
 }
 function deltaClass(v) { if (v === null || v === undefined) return "zero"; if (v > 0) return "pos"; if (v < 0) return "neg"; return "zero"; }
+// deltaClass只看原始值的正負號，數字很小捨入後顯示是"0"時，顏色卻還是紅/綠，文字跟顏色會對不起來。
+// 這三個版本改成跟旁邊fmt*函式用同一套「捨入後是否真的變成0」邏輯再決定顏色，維持顯示與顏色一致。
+function deltaClassPct(v, d) {
+  if (v === null || v === undefined) return "zero";
+  if (parseFloat(Math.abs(v).toFixed(d === undefined ? 2 : d)) === 0) return "zero";
+  return v > 0 ? "pos" : "neg";
+}
+function deltaClassInt(v) {
+  if (v === null || v === undefined) return "zero";
+  if (Math.round(Math.abs(v)) === 0) return "zero";
+  return v > 0 ? "pos" : "neg";
+}
+function deltaClassUSDCompact(v) {
+  if (v === null || v === undefined) return "zero";
+  if (parseFloat(fmtUSDCompact(Math.abs(v)).replace(/[^0-9.]/g, "")) === 0) return "zero";
+  return v > 0 ? "pos" : "neg";
+}
 
 // ---- global snapshot date ----
 // 網站固定只採用 T-N（N=CUTOFF_LAG_DAYS）以前的資料，CUTOFF_DATE只是這個政策算出來的日曆
@@ -510,7 +527,7 @@ function renderBody() {
   tbody.innerHTML = rows.map(r => {
     const meta = META[r.code] || {};
     const levClass = meta.lev && meta.lev.includes("做空") ? "short" : "long";
-    const chgClass = r.priceChg1d === null || r.priceChg1d === undefined ? "zero" : deltaClass(r.priceChg1d);
+    const chgClass = r.priceChg1d === null || r.priceChg1d === undefined ? "zero" : deltaClassPct(r.priceChg1d, 2);
     const chgArrow = r.priceChg1d > 0 ? "▲" : r.priceChg1d < 0 ? "▼" : "‒";
     const chgLabel = (r.priceChg1d === null || r.priceChg1d === undefined) ? "—" : `${chgArrow} ${Math.abs(r.priceChg1d).toFixed(2)}%`;
     const spark = trailingAumSpark(r.code, 20);
@@ -524,11 +541,11 @@ function renderBody() {
     const sharesOutChgPctText = (r.sharesOutChg1dPct === null || r.sharesOutChg1dPct === undefined) ? "" : ` (${fmtPct(r.sharesOutChg1dPct, 1)})`;
     const sharesOutChgCell = (r.sharesOutChg1d === null || r.sharesOutChg1d === undefined)
       ? `<span class="na" title="史料不足，無法計算">—</span>`
-      : `<span class="delta ${deltaClass(r.sharesOutChg1d)}">${fmtIntSigned(r.sharesOutChg1d)}${sharesOutChgPctText}</span>`;
+      : `<span class="delta ${deltaClassInt(r.sharesOutChg1d)}">${fmtIntSigned(r.sharesOutChg1d)}${sharesOutChgPctText}</span>`;
     const impactTip = `衝擊金額（估算） = 再平衡效應 AUM×(槓桿-1)×淨值當日報酬率${r.impactReturnSource === "price" ? "（此標的無逐日NAV，改用市價當日報酬率代替）" : ""} + 資金流效應 Δ發行股數(估算)×淨值。詳見文末附錄`;
     const impactCell = (r.impactAmount === null || r.impactAmount === undefined)
       ? `<span class="na" title="無資料">—</span>`
-      : `<span class="delta ${deltaClass(r.impactAmount)}">${fmtUSDCompactSigned(r.impactAmount)}</span>`;
+      : `<span class="delta ${deltaClassUSDCompact(r.impactAmount)}">${fmtUSDCompactSigned(r.impactAmount)}</span>`;
 
     const mainRow = `
       <tr data-code="${r.code}" class="${r.code === selectedCode ? "selected" : ""}">
@@ -555,22 +572,22 @@ function renderBody() {
         <td class="num" title="${impactTip}">${impactCell}</td>
         <td class="num spark-td sticky-col-3" title="近${impactSparkSeries.values.length}個交易日 衝擊金額(估算,絕對值)走勢，${r.impactSpark === null || r.impactSpark === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.impactSpark, 1)}・點擊查看完整歷史">
           <div class="spark-cell">
-            ${(r.impactSpark === null || r.impactSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClass(r.impactSpark)}">${fmtPct(r.impactSpark, 1)}</span>`}
+            ${(r.impactSpark === null || r.impactSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClassPct(r.impactSpark, 1)}">${fmtPct(r.impactSpark, 1)}</span>`}
             ${sparkSVG(impactSparkSeries.values, "zero", "impactSpark-" + r.code)}
             <div class="chart-tooltip" id="impactSparkTip-${r.code}"></div>
           </div>
         </td>
         <td class="num spark-td sticky-col-2" title="近${flowSpark.values.length}個交易日 發行股數(估算＝AUM/淨值)走勢，${r.flowSpark === null || r.flowSpark === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.flowSpark, 1)}・點擊查看完整歷史">
           <div class="spark-cell">
-            ${(r.flowSpark === null || r.flowSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClass(r.flowSpark)}">${fmtPct(r.flowSpark, 1)}</span>`}
+            ${(r.flowSpark === null || r.flowSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClassPct(r.flowSpark, 1)}">${fmtPct(r.flowSpark, 1)}</span>`}
             ${sparkSVG(flowSpark.values, flowSpark.values.length >= 2 ? deltaClass(flowSpark.values[flowSpark.values.length - 1] - flowSpark.values[0]) : "zero", "flowSpark-" + r.code)}
             <div class="chart-tooltip" id="flowSparkTip-${r.code}"></div>
           </div>
         </td>
         <td class="num spark-td sticky-col-1" title="近${spark.values.length}個交易日 AUM 走勢，${r.aumChg20 === null || r.aumChg20 === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.aumChg20, 1)}・點擊查看完整歷史">
           <div class="spark-cell">
-            ${(r.aumChg20 === null || r.aumChg20 === undefined) ? "" : `<span class="spark-chg-badge ${deltaClass(r.aumChg20)}">${fmtPct(r.aumChg20, 1)}</span>`}
-            ${sparkSVG(spark.values, deltaClass(r.aumChg20), "spark-" + r.code)}
+            ${(r.aumChg20 === null || r.aumChg20 === undefined) ? "" : `<span class="spark-chg-badge ${deltaClassPct(r.aumChg20, 1)}">${fmtPct(r.aumChg20, 1)}</span>`}
+            ${sparkSVG(spark.values, deltaClassPct(r.aumChg20, 1), "spark-" + r.code)}
             <div class="chart-tooltip" id="sparkTip-${r.code}"></div>
           </div>
         </td>
@@ -806,7 +823,7 @@ function renderChartsSection(code, range) {
   if (fseries.length >= 2) {
     const chg = ((fseries[fseries.length - 1].ratio / fseries[0].ratio) - 1) * 100;
     navTitle = `發行股數（估算＝AUM/淨值）・${rangeLabel}`;
-    navSubtitle = `≈${fmtInt(fseries[fseries.length - 1].ratio)} 單位 <span class="delta60 ${deltaClass(chg)}">${fmtPct(chg)} / ${fseries.length}日</span>`;
+    navSubtitle = `≈${fmtInt(fseries[fseries.length - 1].ratio)} 單位 <span class="delta60 ${deltaClassPct(chg)}">${fmtPct(chg)} / ${fseries.length}日</span>`;
     navChartHtml = `<div class="chart-wrap">${chartSVGString(fseries.map(p => p.ratio), "navGrad-" + code, "sharesSvg-" + code)}<div class="chart-tooltip" id="sharesTip-${code}"></div></div>`;
   } else {
     navTitle = `發行股數（估算）・${rangeLabel}`; navSubtitle = "";
@@ -820,7 +837,7 @@ function renderChartsSection(code, range) {
   if (aseries.length >= 2) {
     const chg = ((aseries[aseries.length - 1].aum / aseries[0].aum) - 1) * 100;
     const label = range ? `${aseries.length}日` : `自${aseries[0].date}成立以來`;
-    aumSubtitle = `${fmtUSDCompact(s.aum)} <span class="delta60 ${deltaClass(chg)}">${fmtPct(chg)} / ${label}</span>`;
+    aumSubtitle = `${fmtUSDCompact(s.aum)} <span class="delta60 ${deltaClassPct(chg)}">${fmtPct(chg)} / ${label}</span>`;
   } else {
     aumSubtitle = `${fmtUSDCompact(s.aum)} <span class="na" title="史料不足，無法計算漲跌幅">—</span>`;
   }
@@ -835,7 +852,7 @@ function renderChartsSection(code, range) {
     const latest = absVals[absVals.length - 1];
     const first = absVals[0];
     const chg = first ? ((latest / first) - 1) * 100 : null;
-    impactSubtitle = `${fmtUSDCompact(latest)} <span class="delta60 ${deltaClass(chg)}">${chg === null ? "—" : fmtPct(chg)} / ${iseries.length}日</span> <span class="text-faint" style="font-size:12px;">(絕對值，最新一日)</span>`;
+    impactSubtitle = `${fmtUSDCompact(latest)} <span class="delta60 ${deltaClassPct(chg)}">${chg === null ? "—" : fmtPct(chg)} / ${iseries.length}日</span> <span class="text-faint" style="font-size:12px;">(絕對值，最新一日)</span>`;
     impactChartHtml = `<div class="chart-wrap">${chartSVGString(absVals, "impactGrad-" + code, "impactSvg-" + code)}<div class="chart-tooltip" id="impactTip-${code}"></div></div>`;
   } else {
     impactSubtitle = "";
