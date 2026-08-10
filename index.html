@@ -303,19 +303,28 @@ function fmtUSDCompact(v) {
   return "$" + v.toFixed(0);
 }
 function fmtUSD2(v) { return (v === null || v === undefined) ? "—" : "$" + v.toFixed(2); }
+// 這三個fmt*Signed/fmtPct都先把數字格式化成字串、再從字串判斷「四捨五入後是不是真的變成0」才決定
+// 要不要加正負號——不能直接看原始值v的正負號，不然像-0.4這種小負數，四捨五入顯示出來是"0"，
+// 但正負號還是照v<0印出"−0"，會出現這種看起來像bug的假負號。
 function fmtUSDCompactSigned(v) {
   if (v === null || v === undefined) return "—";
-  return (v >= 0 ? "+" : "−") + fmtUSDCompact(Math.abs(v));
+  const mag = fmtUSDCompact(Math.abs(v));
+  const isZero = parseFloat(mag.replace(/[^0-9.]/g, "")) === 0;
+  return (isZero ? "" : (v >= 0 ? "+" : "−")) + mag;
 }
 function fmtInt(v) { return (v === null || v === undefined) ? "—" : Math.round(v).toLocaleString("en-US"); }
 function fmtIntSigned(v) {
   if (v === null || v === undefined) return "—";
-  return (v >= 0 ? "+" : "−") + fmtInt(Math.abs(v));
+  const mag = fmtInt(Math.abs(v));
+  const isZero = parseFloat(mag.replace(/,/g, "")) === 0;
+  return (isZero ? "" : (v >= 0 ? "+" : "−")) + mag;
 }
 function fmtPct(v, d) {
   if (v === null || v === undefined) return "—";
-  const sign = v > 0 ? "+" : "";
-  return sign + v.toFixed(d === undefined ? 2 : d) + "%";
+  const digits = d === undefined ? 2 : d;
+  const mag = Math.abs(v).toFixed(digits);
+  const isZero = parseFloat(mag) === 0;
+  return (isZero ? "" : (v > 0 ? "+" : "-")) + mag + "%";
 }
 function deltaClass(v) { if (v === null || v === undefined) return "zero"; if (v > 0) return "pos"; if (v < 0) return "neg"; return "zero"; }
 
