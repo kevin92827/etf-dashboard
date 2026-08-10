@@ -119,12 +119,12 @@
   .est-mark { color: var(--est); font-weight: 700; cursor: help; }
   .na { color: var(--text-faint); cursor: help; }
 
-  .spark-cell { display: flex; align-items: center; justify-content: flex-end; position: relative; }
+  .spark-cell { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 3px; position: relative; }
   td.spark-td { cursor: pointer; }
   .spark-svg { width: 100px; height: 30px; display: block; overflow: visible; }
   .spark-svg:hover { filter: brightness(1.15); }
-  .spark-chg-badge { position: absolute; top: -3px; left: 0; font-size: 10.5px; font-weight: 700; line-height: 1; pointer-events: none; font-variant-numeric: tabular-nums; }
-  .spark-chg-badge.pos { color: var(--pos); } .spark-chg-badge.neg { color: var(--neg); } .spark-chg-badge.zero { color: var(--text-faint); }
+  .spark-chg-badge { font-size: 10.5px; font-weight: 700; line-height: 1; pointer-events: none; font-variant-numeric: tabular-nums; }
+  .spark-chg-badge.pos { color: var(--pos); } .spark-chg-badge.neg { color: var(--neg); } .spark-chg-badge.zero { color: var(--text-faint); } .spark-chg-badge.neutral { color: var(--accent); }
 
   /* pin the two chart columns to the right edge of the scroll area — at narrower panel widths the table
      needs horizontal scroll, and without this the sparklines (the whole point of those columns) were the
@@ -287,7 +287,6 @@ const COLUMNS = [
   { key: "code", label: "代號" },
   { key: "aum", label: "AUM" },
   { key: "nav", label: "淨值" },
-  { key: "sharesOut", label: "發行股數" },
   { key: "sharesOutChg20", label: "發行單位數變化(20日)" },
   { key: "impactAmount", label: "衝擊金額" },
   { key: "impactSpark", label: "衝擊金額走勢(絕對值)" },
@@ -501,10 +500,7 @@ function renderBody() {
       : `此標的NAV暫無逐日歷史，這是最新快照的估算值（詳見文末附錄）`;
     const navCell = r.nav === null ? `<span class="na" title="無資料">—</span>` :
       `${fmtUSD2(r.nav)}${r.navIsEstimate ? `<span class="est-mark" title="${navTip}">＊</span>` : ""}`;
-    const sharesOutCell = (r.sharesOut === null || r.sharesOut === undefined)
-      ? `<span class="na" title="無資料">—</span>`
-      : `${fmtInt(r.sharesOut)}`;
-    const sharesOutChgTip = "發行單位數變化（估算）＝近20個交易日 AUM/淨值(或市價)比值 頭尾變化率，方法與「發行股數走勢」縮圖相同，詳見文末附錄";
+    const sharesOutChgTip = `發行單位數變化（估算）＝近20個交易日 AUM/淨值(或市價)比值 頭尾變化率，方法與「發行股數走勢」縮圖相同${r.sharesOutDate ? "・資料日期 " + r.sharesOutDate : ""}，詳見文末附錄`;
     const sharesOutChgCell = (r.sharesOutChg20 === null || r.sharesOutChg20 === undefined)
       ? `<span class="na" title="史料不足，無法計算">—</span>`
       : `<span class="delta ${deltaClass(r.sharesOutChg20)}">${fmtPct(r.sharesOutChg20)}</span><span class="est-mark" title="${sharesOutChgTip}">＊</span>`;
@@ -534,11 +530,11 @@ function renderBody() {
         </td>
         <td class="num" title="US$ ${fmtInt(r.aum)}・資料日期 ${r.aumDate || "—"}">${fmtUSDCompact(r.aum)}</td>
         <td class="num">${navCell}</td>
-        <td class="num" title="${r.sharesOutDate ? "資料日期 " + r.sharesOutDate : ""}">${sharesOutCell}</td>
         <td class="num" title="${sharesOutChgTip}">${sharesOutChgCell}</td>
         <td class="num">${impactCell}</td>
-        <td class="num spark-td sticky-col-3" title="近${impactSparkSeries.values.length}個交易日 衝擊金額(估算,絕對值)走勢・點擊查看完整歷史">
+        <td class="num spark-td sticky-col-3" title="近${impactSparkSeries.values.length}個交易日 衝擊金額(估算,絕對值)走勢，${r.impactSpark === null || r.impactSpark === undefined ? "合計史料不足" : "近20日合計 " + fmtUSDCompact(r.impactSpark)}・點擊查看完整歷史">
           <div class="spark-cell">
+            ${(r.impactSpark === null || r.impactSpark === undefined) ? "" : `<span class="spark-chg-badge neutral">${fmtUSDCompact(r.impactSpark)}</span>`}
             ${sparkSVG(impactSparkSeries.values, "zero", "impactSpark-" + r.code)}
             <div class="chart-tooltip" id="impactSparkTip-${r.code}"></div>
           </div>
