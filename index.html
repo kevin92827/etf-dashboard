@@ -683,13 +683,12 @@ function escapeHtml(s) { return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp
 function nameWithTicker(h) { return `${escapeHtml(h.name)}${h.ticker ? ` <span class="ticker-badge">${escapeHtml(h.ticker)}</span>` : ""}`; }
 
 function lookthroughRowsHTML(items) {
-  if (!items.length) return `<tr><td colspan="4" style="text-align:center; color:var(--text-faint);">無符合項目</td></tr>`;
+  if (!items.length) return `<tr><td colspan="3" style="text-align:center; color:var(--text-faint);">無符合項目</td></tr>`;
   return items.map(h => `
     <tr>
       <td>${nameWithTicker(h)}</td>
       <td class="mono ${deltaClass(h.weight)}" style="color:${h.weight >= 0 ? "inherit" : "var(--text-dim)"}">${h.weight.toFixed(2)}%</td>
       <td><span class="method-tag">${escapeHtml(h.method)}</span></td>
-      <td class="mono">${h.count === null ? "—" : h.count}</td>
     </tr>`).join("");
 }
 function holdingsRowsHTML(items) {
@@ -710,8 +709,8 @@ function exploreTableContent(code, mode, query) {
     const all = LOOKTHROUGH[code] || [];
     const items = query ? all.filter(x => x.name.toLowerCase().includes(query)) : all;
     return {
-      colgroup: `<col class="c-name"><col class="c-num"><col><col class="c-num">`,
-      thead: `<tr><th>個股／分類</th><th>有效曝險權重</th><th>組成方式</th><th>明細筆數</th></tr>`,
+      colgroup: `<col class="c-name"><col class="c-num"><col>`,
+      thead: `<tr><th>個股／分類</th><th>有效曝險權重</th><th>組成方式</th></tr>`,
       body: lookthroughRowsHTML(items),
       total: all.length, shown: items.length,
     };
