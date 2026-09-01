@@ -271,7 +271,7 @@
     </div>
     <div class="snapshot-badge">
       <div class="label">最後更新時間</div>
-      <div class="date mono" id="buildTime">2026-09-01 13:32</div>
+      <div class="date mono" id="buildTime">2026-09-01 13:36</div>
     </div>
   </header>
 
@@ -894,13 +894,15 @@ function renderChartsSection(code, range) {
     navChartHtml = noDataCard("暫無歷史走勢資料");
   }
 
-  // 「全部」模式改成算真正的「自成立以來」漲跌幅(不再借用近20日增幅頂替)——年輕基金(如SNXX，
-  // 種子資金僅25萬美元)算出來可能是+79萬%這種誇張數字，但那是真實情況不是bug，用「自YYYY-MM-DD
-  // 成立以來」的標籤明確標出時間跨度，讓使用者自己判斷這是長期數字、不是短期漲跌，不用刻意藏起來。
+  // 「全部」模式改成算真正的「累積歷史序列起點以來」漲跌幅(不再借用近20日增幅頂替)——年輕基金
+  // (如SNXX，種子資金僅25萬美元)算出來可能是+79萬%這種誇張數字，但那是真實情況不是bug，用「自
+  // YYYY-MM-DD」的標籤明確標出時間跨度，讓使用者自己判斷這是長期數字、不是短期漲跌，不用刻意藏起來。
+  // ⚠️ 2026-09-01使用者要求拿掉「成立以來」的措辭：這個日期是「我們累積的歷史序列從哪天開始」
+  // (aumHistoryStart)，不是驗證過的基金真正成立/上市日，不要暗示兩者是同一件事。
   let aumSubtitle;
   if (aseries.length >= 2) {
     const chg = ((aseries[aseries.length - 1].aum / aseries[0].aum) - 1) * 100;
-    const label = range ? `${aseries.length}日` : `自${aseries[0].date}成立以來`;
+    const label = range ? `${aseries.length}日` : `自${aseries[0].date}`;
     aumSubtitle = `${fmtUSDCompact(s.aum)} <span class="delta60 ${deltaClassPct(chg)}">${fmtPct(chg)} / ${label}</span>`;
   } else {
     aumSubtitle = `${fmtUSDCompact(s.aum)} <span class="na" title="史料不足，無法計算漲跌幅">—</span>`;
