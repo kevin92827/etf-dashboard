@@ -271,7 +271,7 @@
     </div>
     <div class="snapshot-badge">
       <div class="label">最後更新時間</div>
-      <div class="date mono" id="buildTime">2026-09-01 13:28</div>
+      <div class="date mono" id="buildTime">2026-09-01 13:32</div>
     </div>
   </header>
 
@@ -627,11 +627,11 @@ function renderBody() {
             </span>
           </div>
         </td>
-        <td class="num" title="US$ ${fmtInt(r.aum)}・資料日期 ${r.aumDate || "—"}">${fmtUSDCompact(r.aum)}</td>
-        <td class="num" title="${navTip}">${navCell}</td>
-        <td class="num" title="${sharesOutChgTip}">${sharesOutChgCell}</td>
-        <td class="num" title="${impactRebalanceTip}">${impactRebalanceCell}</td>
-        <td class="num" title="${impactFlowTip}">${impactFlowCell}</td>
+        <td class="num">${fmtUSDCompact(r.aum)}</td>
+        <td class="num">${navCell}</td>
+        <td class="num">${sharesOutChgCell}</td>
+        <td class="num">${impactRebalanceCell}</td>
+        <td class="num">${impactFlowCell}</td>
         <td class="num spark-td sticky-col-2" title="近${flowSpark.values.length}個交易日 發行股數(估算＝AUM/淨值)走勢，${r.flowSpark === null || r.flowSpark === undefined ? "增幅史料不足" : "增幅 " + fmtPct(r.flowSpark, 1)}・點擊查看完整歷史">
           <div class="spark-cell">
             ${(r.flowSpark === null || r.flowSpark === undefined) ? "" : `<span class="spark-chg-badge ${deltaClassPct(r.flowSpark, 1)}">${fmtPct(r.flowSpark, 1)}</span>`}
@@ -953,7 +953,7 @@ function buildDetailRowHTML(code) {
             <!-- 2026-09-01：使用者要求先不要顯示這行(AUM/發行股數/市價/NAV各自涵蓋天數)，
                  起因是Direxion系5檔目前NAV天數卡在1天(官方30日API金鑰過期的假象，見
                  scrape_price_nav_history.py)，容易誤導。coverageBits邏輯保留，只是不渲染，
-                 之後金鑰修好、數字正常了可以把這行`<p>`加回來。 -->
+                 之後金鑰修好、數字正常了可以把這行p標籤加回來。 -->
             <div class="range-control">
               <button class="range-btn" data-code="${code}" data-range="20">20日</button>
               <button class="range-btn" data-code="${code}" data-range="60">60日</button>
